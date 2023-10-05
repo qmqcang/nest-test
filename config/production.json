@@ -1,0 +1,6 @@
+{
+  "db": {
+    "host": "www.prod.com",
+    "port": 3000
+  }
+}
