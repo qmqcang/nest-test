@@ -1,5 +1,6 @@
 import {
   Body,
+  Query,
   Controller,
   Get,
   Param,
@@ -10,15 +11,18 @@ import {
   HttpException,
   HttpStatus,
   UnauthorizedException,
-  Inject
+  Inject,
+  UseFilters,
 } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 import { UserService } from './user.service'
-import { DatabaseEnum } from 'src/enum/config.menu'
 import { User } from './user.entity'
 import { WINSTON_MODULE_NEST_PROVIDER } from 'nest-winston'
+import { TypeormFilter } from 'src/filters/typeorm.filter'
+import type { getUserDto } from './dto/get-user.dto'
 
 @Controller('user')
+@UseFilters(new TypeormFilter())
 export class UserController {
   // private logger = new Logger(UserController.name)
 
@@ -31,20 +35,8 @@ export class UserController {
   }
 
   @Get()
-  getUsers() {
-    // console.log(this.configService.get(ConfigEnum.DB_HOST))
-    // console.log(this.configService.get(ConfigEnum.BASE_URL))
-    // console.log(
-    //   this.configService.get(ConfigEnum.DB_PORT) || process.env.DB_PASS
-    // )
-    const user = { isAdmin: false }
-
-    if (!user.isAdmin) {
-      // throw new HttpException('Forbidden', HttpStatus.FORBIDDEN)
-      throw new UnauthorizedException('该用户没有权限')
-    }
-
-    return this.userService.findAll()
+  getUsers(@Query() query: getUserDto) {
+    return this.userService.findAll(query)
   }
 
   @Get(':id')

@@ -1,3 +1,8 @@
+export enum ConfigEnum {
+  PORT = 'PORT',
+  PREFIX = 'PREFIX'
+}
+
 export enum DatabaseEnum {
   DB_TYPE = 'DB_TYPE',
   DB_HOST = 'DB_HOST',

@@ -3,6 +3,8 @@ import { InjectRepository } from '@nestjs/typeorm'
 import { Repository } from 'typeorm'
 import { User } from './user.entity'
 import { Logs } from '../logs/logs.entity'
+import type { getUserDto } from './dto/get-user.dto'
+import { conditionUtils } from 'src/utils/db.helper'
 
 @Injectable()
 export class UserService {
@@ -11,8 +13,43 @@ export class UserService {
     @InjectRepository(Logs) private readonly logsRepository: Repository<Logs>
   ) {}
 
-  findAll() {
-    return this.userRepository.find()
+  findAll({ page, limit: take = 10, username, gender, role }: getUserDto) {
+    const skip = (page - 1) * take
+
+    /* return this.userRepository.find({
+      select: {
+        id: true,
+        username: true,
+        profile: {
+          gender: true
+        }
+      },
+      relations: ['profile', 'roles'],
+      skip,
+      take,
+      where: {
+        username,
+        profile: {
+          gender
+        },
+        roles: {
+          id: role
+        }
+      }
+    }) */
+
+    const queryBuilder = this.userRepository
+      .createQueryBuilder('user')
+      .leftJoinAndSelect('user.profile', 'profile')
+      .leftJoinAndSelect('user.roles', 'roles')
+
+    const newQueryBuilder = conditionUtils<User>(queryBuilder, {
+      'user.username': username,
+      'profile.gender': gender,
+      'roles.id': role
+    })
+
+    return newQueryBuilder.skip(skip).take(take).getMany()
   }
 
   find(id: number) {
