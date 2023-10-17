@@ -1,6 +1,7 @@
 import {
   Body,
   Query,
+  Headers,
   Controller,
   Get,
   Param,
@@ -12,7 +13,7 @@ import {
   HttpStatus,
   UnauthorizedException,
   Inject,
-  UseFilters,
+  UseFilters
 } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 import { UserService } from './user.service'
@@ -28,7 +29,6 @@ export class UserController {
 
   constructor(
     private readonly userService: UserService,
-    private readonly configService: ConfigService,
     @Inject(WINSTON_MODULE_NEST_PROVIDER) private readonly logger: Logger
   ) {
     this.logger.log('UserController init')
@@ -41,7 +41,6 @@ export class UserController {
 
   @Get(':id')
   getUser(@Param('id') id: number) {
-    this.logger.log('请求成功！')
     return this.userService.find(id)
   }
 
@@ -51,12 +50,27 @@ export class UserController {
   }
 
   @Patch(':id')
-  updateUser(@Param('id') id: number, @Body() user: User) {
-    return this.userService.update(id, user)
+  updateUser(
+    @Param('id') id: number,
+    @Body() user: User,
+    @Headers('Authorization') authId: number
+  ) {
+    console.log(
+      '🚀 ~ file: user.controller.ts:58 ~ UserController ~ user:',
+      user
+    )
+
+    if (id === authId) {
+      return this.userService.update(id, user)
+    } else {
+      throw new UnauthorizedException()
+    }
   }
 
   @Delete(':id')
-  deleteUser(@Param('id') id: number) {
+  removeUser(@Param('id') id: number) {
+    console.log(id)
+
     return this.userService.remove(id)
   }
 

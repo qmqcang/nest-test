@@ -1,4 +1,6 @@
 import {
+  AfterRemove,
+  BeforeUpdate,
   Column,
   Entity,
   JoinTable,
@@ -16,19 +18,29 @@ export class User {
   @PrimaryGeneratedColumn()
   id: number
 
-  @Column({ unique: true})
+  @Column({ unique: true })
   username: string
 
   @Column({ select: false })
   password: string
 
-  @OneToMany(() => Logs, (logs) => logs.user)
+  @OneToMany(() => Logs, (logs) => logs.user, { cascade: true })
   logs: Logs[]
 
-  @ManyToMany(() => Roles, (roles) => roles.users)
-  @JoinTable({ name: 'user_roles' })
+  @ManyToMany(() => Roles, (roles) => roles.users, { cascade: ['insert'] })
+  @JoinTable({ name: 'users_roles' })
   roles: Roles[]
 
-  @OneToOne(() => Profile, (profile) => profile.user)
+  @OneToOne(() => Profile, (profile) => profile.user, { cascade: true })
   profile: Profile
+
+  @AfterRemove()
+  afterRemove() {
+    console.log('已删除：', this.username)
+  }
+
+  @BeforeUpdate()
+  afterUpdate() {
+    console.log('已更新：', this.username)
+  }
 }

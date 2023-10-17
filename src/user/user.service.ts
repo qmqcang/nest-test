@@ -1,8 +1,9 @@
 import { Injectable } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
-import { Repository } from 'typeorm'
+import { In, Repository } from 'typeorm'
 import { User } from './user.entity'
 import { Logs } from '../logs/logs.entity'
+import { Roles } from 'src/roles/roles.entity'
 import type { getUserDto } from './dto/get-user.dto'
 import { conditionUtils } from 'src/utils/db.helper'
 
@@ -10,10 +11,17 @@ import { conditionUtils } from 'src/utils/db.helper'
 export class UserService {
   constructor(
     @InjectRepository(User) private readonly userRepository: Repository<User>,
-    @InjectRepository(Logs) private readonly logsRepository: Repository<Logs>
+    @InjectRepository(Logs) private readonly logsRepository: Repository<Logs>,
+    @InjectRepository(Roles) private readonly rolesRepository: Repository<Roles>
   ) {}
 
-  findAll({ page, limit: take = 10, username, gender, role }: getUserDto) {
+  async findAll({
+    page,
+    limit: take = 10,
+    username,
+    gender,
+    role
+  }: getUserDto) {
     const skip = (page - 1) * take
 
     /* return this.userRepository.find({
@@ -49,7 +57,7 @@ export class UserService {
       'roles.id': role
     })
 
-    return newQueryBuilder.skip(skip).take(take).getMany()
+    return newQueryBuilder.skip(skip).take(take).getManyAndCount()
   }
 
   find(id: number) {
@@ -60,17 +68,36 @@ export class UserService {
   }
 
   async create(user: User) {
+    if (Array.isArray(user.roles) && Number.isInteger(user.roles[0])) {
+      user.roles = await this.rolesRepository.find({
+        where: {
+          id: In(user.roles)
+        }
+      })
+    }
     const U = this.userRepository.create(user)
 
     return await this.userRepository.save(U)
   }
 
-  update(id: number, user: Partial<User>) {
-    return this.userRepository.update(id, user)
+  async update(id: number, user: Partial<User>) {
+    if (Array.isArray(user.roles) && Number.isInteger(user.roles[0])) {
+      user.roles = await this.rolesRepository.find({
+        where: {
+          id: In(user.roles)
+        }
+      })
+    }
+    const userTemp = await this.findProfile(id)
+    const newUser = this.userRepository.merge(userTemp, user)
+
+    return this.userRepository.save(newUser)
   }
 
-  remove(id: number) {
-    return this.userRepository.delete(id)
+  async remove(id: number) {
+    const user = await this.find(id)
+
+    return this.userRepository.remove(user)
   }
 
   findProfile(id: number) {
@@ -84,7 +111,11 @@ export class UserService {
     const user = await this.find(id)
 
     return this.logsRepository.find({
-      where: { user },
+      where: {
+        user: {
+          id
+        }
+      },
       relations: {
         user: true
       }

@@ -30,7 +30,7 @@ const buildConnectionOptions = (): TypeOrmModuleOptions => {
       process.env.NODE_DEV === 'test'
         ? [__dirname + '/**/*.entity.ts']
         : [__dirname + '/**/*.entity{.ts,.js}'],
-    logging: false
+    logging: process.env.NODE_ENV === 'development'
   } as TypeOrmModuleOptions
 }
 
