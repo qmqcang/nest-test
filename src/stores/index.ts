@@ -1,5 +1,5 @@
-import { createPinia } from "pinia"
-import type { App } from "vue"
+import { createPinia } from 'pinia'
+import type { App } from 'vue'
 
 const store = createPinia()
 
@@ -8,3 +8,5 @@ export const setupStore = (app: App<Element>) => {
 }
 
 export { store }
+
+export * from './menus'

@@ -1,4 +1,5 @@
 import Axios from 'axios'
+import type { AxiosInstance } from 'axios'
 
 const request = Axios.create({
   baseURL: __BASE_URL__,

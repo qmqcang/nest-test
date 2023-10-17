@@ -4,11 +4,12 @@ import vue from '@vitejs/plugin-vue'
 import AutoImport from 'unplugin-auto-import/vite'
 import Components from 'unplugin-vue-components/vite'
 import { ElementPlusResolver } from 'unplugin-vue-components/resolvers'
+import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome'
 
 // https://vitejs.dev/config/
 export default ({ mode }: ConfigEnv): UserConfigExport => {
   const ENV = loadEnv(mode, process.cwd())
-  
+
   return {
     plugins: [
       vue(),
@@ -30,10 +31,10 @@ export default ({ mode }: ConfigEnv): UserConfigExport => {
     server: {
       port: Number(ENV.VITE_APP_PORT),
       proxy: {
-        '/api': {
+        [ENV.VITE_APP_BASE_URL]: {
           target: ENV.VITE_APP_TARGET,
-          changeOrigin: true
-          // rewrite: (path) => path.replace(/^\/api/, '')
+          changeOrigin: true,
+          rewrite: (path) => path.replace(/^\/api\/v1\/api/, '/api/v1')
         }
       }
     },
