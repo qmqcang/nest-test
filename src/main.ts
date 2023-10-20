@@ -1,10 +1,12 @@
-import { HttpAdapterHost, NestFactory } from '@nestjs/core'
 import { ConfigService } from '@nestjs/config'
+import { ValidationPipe } from '@nestjs/common'
+import { HttpAdapterHost, NestFactory } from '@nestjs/core'
 import { WINSTON_MODULE_NEST_PROVIDER } from 'nest-winston'
 import { AppModule } from './app.module'
 import { HttpExceptionFilter } from './filters/http-exception.filter'
 import { AllExceptionFilter } from './filters/all-exception.filter'
 import { ConfigEnum } from './enum/config.menu'
+import { SerializeInterceptor } from './interceptors/serialize.interceptor'
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, {})
@@ -23,6 +25,12 @@ async function bootstrap() {
   app.useLogger(winstonLogger)
   // app.useGlobalFilters(new HttpExceptionFilter(winstonLogger))
   app.useGlobalFilters(new AllExceptionFilter(winstonLogger, httpAdapterHost))
+  app.useGlobalPipes(
+    new ValidationPipe({
+      whitelist: true
+    })
+  )
+  // app.useGlobalInterceptors(new SerializeInterceptor())
 
   await app.listen(PORT, () => {
     winstonLogger.log(`服务已启动：http://localhost:${PORT}/${PREFIX}`)

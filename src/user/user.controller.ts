@@ -13,17 +13,27 @@ import {
   HttpStatus,
   UnauthorizedException,
   Inject,
-  UseFilters
+  UseFilters,
+  ParseIntPipe,
+  UseGuards,
+  Req
 } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 import { UserService } from './user.service'
 import { User } from './user.entity'
 import { WINSTON_MODULE_NEST_PROVIDER } from 'nest-winston'
-import { TypeormFilter } from 'src/filters/typeorm.filter'
+import { TypeormFilter } from '../filters/typeorm.filter'
 import type { getUserDto } from './dto/get-user.dto'
+import { CreateUserPipe } from './pipes/create-user.pipe'
+import { CreateUserDto } from './dto/create.user.dto'
+import { AdminGuard } from '../guards/admin.guard'
+import { JwtGuard } from '../guards/jwt.guard'
+import { Roles } from '../auth/roles.decorator'
+import { RolesGuard } from '../guards/roles.guard'
 
 @Controller('user')
 @UseFilters(new TypeormFilter())
+@UseGuards(JwtGuard)
 export class UserController {
   // private logger = new Logger(UserController.name)
 
@@ -40,37 +50,27 @@ export class UserController {
   }
 
   @Get(':id')
-  getUser(@Param('id') id: number) {
-    return this.userService.find(id)
+  @UseGuards(AdminGuard)
+  getUser(@Param('id', ParseIntPipe) id: number) {
+    return this.userService.findOne(id)
   }
 
   @Post()
-  addUser(@Body() user: User) {
-    return this.userService.create(user)
+  addUser(@Body(CreateUserPipe) user: CreateUserDto) {
+    return this.userService.create(user as User)
   }
 
   @Patch(':id')
-  updateUser(
-    @Param('id') id: number,
-    @Body() user: User,
-    @Headers('Authorization') authId: number
-  ) {
-    console.log(
-      '🚀 ~ file: user.controller.ts:58 ~ UserController ~ user:',
-      user
-    )
-
-    if (id === authId) {
-      return this.userService.update(id, user)
-    } else {
-      throw new UnauthorizedException()
-    }
+  @Roles(1)
+  @UseGuards(RolesGuard)
+  updateUser(@Param('id') id: number, @Body() user: User) {
+    return this.userService.update(id, user)
   }
 
   @Delete(':id')
+  @Roles([1, 3])
+  @UseGuards(RolesGuard)
   removeUser(@Param('id') id: number) {
-    console.log(id)
-
     return this.userService.remove(id)
   }
 

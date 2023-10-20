@@ -1,6 +1,7 @@
 export enum ConfigEnum {
   PORT = 'PORT',
-  PREFIX = 'PREFIX'
+  PREFIX = 'PREFIX',
+  SECRET = 'SECRET'
 }
 
 export enum DatabaseEnum {

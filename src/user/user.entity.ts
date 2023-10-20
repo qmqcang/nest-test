@@ -9,6 +9,7 @@ import {
   OneToOne,
   PrimaryGeneratedColumn
 } from 'typeorm'
+import { Exclude } from 'class-transformer'
 import { Logs } from 'src/logs/logs.entity'
 import { Roles } from 'src/roles/roles.entity'
 import { Profile } from './profile.entity'
@@ -21,7 +22,8 @@ export class User {
   @Column({ unique: true })
   username: string
 
-  @Column({ select: false })
+  @Column()
+  @Exclude()
   password: string
 
   @OneToMany(() => Logs, (logs) => logs.user, { cascade: true })

@@ -6,6 +6,7 @@ import { Logs } from '../logs/logs.entity'
 import { Roles } from 'src/roles/roles.entity'
 import type { getUserDto } from './dto/get-user.dto'
 import { conditionUtils } from 'src/utils/db.helper'
+import * as argen2 from 'argon2'
 
 @Injectable()
 export class UserService {
@@ -16,7 +17,7 @@ export class UserService {
   ) {}
 
   async findAll({
-    page,
+    page = 1,
     limit: take = 10,
     username,
     gender,
@@ -57,17 +58,36 @@ export class UserService {
       'roles.id': role
     })
 
-    return newQueryBuilder.skip(skip).take(take).getManyAndCount()
+    return newQueryBuilder
+      .select(['user.id', 'user.username', 'profile', 'roles'])
+      .skip(skip)
+      .take(take)
+      .getManyAndCount()
   }
 
-  find(id: number) {
+  find(username: string) {
     return this.userRepository.findOne({
-      where: { id },
-      relations: { logs: true }
+      where: { username }
     })
   }
 
-  async create(user: User) {
+  findOne(id: number) {
+    return this.userRepository.findOne({
+      where: { id },
+      relations: ['roles']
+    })
+  }
+
+  async create(user: Partial<User>) {
+    if (!user.roles || !user.roles.length) {
+      const role = await this.rolesRepository.findOne({
+        where: {
+          id: 2
+        }
+      })
+
+      user.roles = [role]
+    }
     if (Array.isArray(user.roles) && Number.isInteger(user.roles[0])) {
       user.roles = await this.rolesRepository.find({
         where: {
@@ -76,6 +96,9 @@ export class UserService {
       })
     }
     const U = this.userRepository.create(user)
+
+    // 密码加密
+    U.password = await argen2.hash(U.password)
 
     return await this.userRepository.save(U)
   }
@@ -91,11 +114,13 @@ export class UserService {
     const userTemp = await this.findProfile(id)
     const newUser = this.userRepository.merge(userTemp, user)
 
+    newUser.password = await argen2.hash(newUser.password)
+
     return this.userRepository.save(newUser)
   }
 
   async remove(id: number) {
-    const user = await this.find(id)
+    const user = await this.findOne(id)
 
     return this.userRepository.remove(user)
   }
@@ -108,7 +133,7 @@ export class UserService {
   }
 
   async findLogs(id: number) {
-    const user = await this.find(id)
+    const user = await this.findOne(id)
 
     return this.logsRepository.find({
       where: {

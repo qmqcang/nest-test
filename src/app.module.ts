@@ -16,7 +16,10 @@ import { RolesController } from './roles/roles.controller'
 import { RolesService } from './roles/roles.service'
 import { RolesModule } from './roles/roles.module'
 import { connectionParams } from '../ormconfig'
+import { AuthModule } from './auth/auth.module'
 import Configuration from './configuration'
+import { APP_GUARD } from '@nestjs/core'
+import { AdminGuard } from './guards/admin.guard'
 
 const envFilePath = `.env.${process.env.NODE_ENV ?? 'development'}`
 
@@ -45,7 +48,8 @@ const envFilePath = `.env.${process.env.NODE_ENV ?? 'development'}`
     TypeOrmModule.forRoot(connectionParams),
     UserModule,
     LogsModule,
-    RolesModule
+    RolesModule,
+    AuthModule
     // LoggerModule.forRoot({
     //   pinoHttp: {
     //     transport: {
@@ -73,7 +77,15 @@ const envFilePath = `.env.${process.env.NODE_ENV ?? 'development'}`
     // })
   ],
   controllers: [AppController, RolesController],
-  providers: [AppService, Logger, RolesService],
+  providers: [
+    AppService,
+    Logger,
+    RolesService
+    // {
+    //   provide: APP_GUARD,
+    //   useClass: AdminGuard
+    // }
+  ],
   exports: [Logger]
 })
 export class AppModule {}
